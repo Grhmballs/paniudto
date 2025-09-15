@@ -84,21 +84,43 @@ body {
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(135deg, #3498db, #e74c3c);
+    background-image: url('paniudto-dishes.jpg');
+    background-size: cover;        /* Makes image cover the entire area */
+    background-position: center;   /* Centers the image */
+    background-repeat: no-repeat;  /* Prevents image repetition */
     color: white;
-    padding: 4rem 0;
+    padding: 8rem 0;
     text-align: center;
+    position: relative;            /* For overlay positioning */
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5); /* Dark overlay */
+    z-index: 1;
 }
 
 .hero-content {
-    max-width: 800px;
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 3rem 2rem;
+    border: 6px solid white;
+    background: rgba(0, 0, 0, 0.4); /* Low opacity black */
 }
 
 .hero h1 {
-    font-size: 3rem;
+    font-size: 4rem;
+    font-family: 'Times New Roman', Times, serif;
     margin-bottom: 1rem;
+    color: #f6503d;
+
 }
 
 .tagline {
