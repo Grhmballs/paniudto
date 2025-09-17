@@ -424,6 +424,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('loginForm');
+  if (form) { // only run this on login.html
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value.trim();
+
+      try {
+        const res = await fetch('data/users.json');
+        const users = await res.json();
+
+        const user = users.find(x => x.username === u && x.password === p);
+
+        if (!user) {
+          alert('Invalid username or password');
+          return;
+        }
+
+        // store info in session
+        sessionStorage.setItem('username', user.username);
+        sessionStorage.setItem('role', user.role);
+
+        // go to dashboard
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        console.error('Error loading users.json', err);
+        alert('Login system error — check console.');
+      }
+    });
+  }
+});
+
 
 // ===== CONSOLE MESSAGES FOR DEMO =====
 
@@ -436,3 +470,4 @@ console.log('---');
 console.log('✅ User registration now saves to localStorage!');
 console.log('New accounts will persist between page loads.');
 console.log('This is an IT student project showcasing local Cantilan cuisine!');
+
