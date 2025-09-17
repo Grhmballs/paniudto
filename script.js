@@ -121,49 +121,43 @@ function clearCurrentUser() {
 // ===== LOGIN FUNCTIONALITY =====
 
 // Handle login form submission
-// ===== LOGIN FUNCTIONALITY (with users.json from FileMaker) =====
-document.addEventListener('DOMContentLoaded', () => {
-  const loginForm = document.getElementById('loginForm');
-  if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const u = document.getElementById('username').value.trim();
-      const p = document.getElementById('password').value.trim();
-
-      if (!u || !p) {
-        showError('Please fill in all fields');
-        return;
-      }
-
-      try {
-        const res = await fetch('data/users.json');
-        const users = await res.json();
-
-        const user = users.find(x => x.username === u && x.password === p);
-
-        if (!user) {
-          showError('Invalid username or password');
-          return;
-        }
-
-        // Save login info to session
-        sessionStorage.setItem('username', user.username);
-        sessionStorage.setItem('role', user.role);
-
-        showSuccess('Login successful! Redirecting to dashboard...');
-
-        setTimeout(() => {
-          window.location.href = 'dashboard.html';
-        }, 1500);
-      } catch (err) {
-        console.error('Error loading users.json', err);
-        alert('Login system error — check console.');
-      }
-    });
-  }
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('loginForm');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
+            
+            // Simple validation
+            if (!username || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            // Check credentials against stored users
+            const users = getAllUsers();
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                // Login successful
+                setCurrentUser(username);
+                updateNavigation(); // Update nav immediately
+                showSuccess('Login successful! Redirecting to dashboard...');
+                
+                // Redirect to dashboard after a short delay
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            } else {
+                showError('Invalid username or password');
+            }
+        });
+    }
 });
-
 
 // ===== REGISTER FUNCTIONALITY =====
 
@@ -221,21 +215,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Check if user is logged in for dashboard access
 function checkLoginStatus() {
-  const username = sessionStorage.getItem('username');
-  const role = sessionStorage.getItem('role');
-  const welcomeUser = document.getElementById('welcomeUser');
-
-  if (window.location.pathname.includes('dashboard.html')) {
-    if (!username) {
-      alert('Please login to access the dashboard');
-      window.location.href = 'login.html';
-      return;
-    } else if (welcomeUser) {
-      welcomeUser.textContent = `Welcome back, ${username}! (Role: ${role})`;
+    const currentUser = getCurrentUser();
+    const welcomeUser = document.getElementById('welcomeUser');
+    
+    // If we're on the dashboard page
+    if (window.location.pathname.includes('dashboard.html')) {
+        if (!currentUser) {
+            // Redirect to login if not logged in
+            alert('Please login to access the dashboard');
+            window.location.href = 'login.html';
+            return;
+        } else {
+            // Show welcome message
+            if (welcomeUser) {
+                welcomeUser.textContent = `Welcome back, ${currentUser}!`;
+            }
+        }
     }
-  }
 }
-
 
 // Load dishes into the dashboard
 function loadDishes() {
@@ -286,12 +283,12 @@ function createDishCard(dish) {
 // ===== LOGOUT FUNCTIONALITY =====
 
 function logout() {
-  if (confirm('Are you sure you want to logout?')) {
-    sessionStorage.clear();
-    updateNavigation();
-    alert('You have been logged out successfully');
-    window.location.href = 'index.html';
-  }
+    if (confirm('Are you sure you want to logout?')) {
+        clearCurrentUser();
+        updateNavigation(); // Update nav immediately
+        alert('You have been logged out successfully');
+        window.location.href = 'index.html';
+    }
 }
 
 // ===== UTILITY FUNCTIONS FOR MESSAGES =====
@@ -351,41 +348,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Fast navigation update - uses pre-loaded user status
 function updateNavigationFast() {
-  const loginButton = document.querySelector('.login-btn');
-  const username = sessionStorage.getItem('username');
-
-  if (loginButton) {
-    if (username) {
-      loginButton.textContent = 'Logout';
-      loginButton.onclick = logout;
-      loginButton.removeAttribute('href');
-    } else {
-      loginButton.textContent = 'Login';
-      loginButton.href = 'login.html';
-      loginButton.onclick = null;
+    const loginButton = document.querySelector('.login-btn');
+    
+    if (loginButton) {
+        if (currentUserOnLoad) {
+            // User is logged in - show logout
+            loginButton.textContent = 'Logout';
+            loginButton.href = '#';
+            loginButton.onclick = logout;
+            loginButton.removeAttribute('href');
+        } else {
+            // User is not logged in - show login
+            loginButton.textContent = 'Login';
+            loginButton.href = 'login.html';
+            loginButton.onclick = null;
+        }
+        
+        // Mark button as ready (makes it visible via CSS)
+        loginButton.classList.add('ready');
     }
-    loginButton.classList.add('ready');
-  }
 }
 
+// Update navigation to show Login/Logout based on user status (for live updates)
 function updateNavigation() {
-  const loginButton = document.querySelector('.login-btn');
-  const username = sessionStorage.getItem('username');
-
-  if (loginButton) {
-    if (username) {
-      loginButton.textContent = 'Logout';
-      loginButton.onclick = logout;
-      loginButton.removeAttribute('href');
-    } else {
-      loginButton.textContent = 'Login';
-      loginButton.href = 'login.html';
-      loginButton.onclick = null;
+    const currentUser = getCurrentUser();
+    const loginButton = document.querySelector('.login-btn');
+    
+    if (loginButton) {
+        if (currentUser) {
+            // User is logged in - show logout
+            loginButton.textContent = 'Logout';
+            loginButton.href = '#';
+            loginButton.onclick = logout;
+            loginButton.removeAttribute('href');
+        } else {
+            // User is not logged in - show login
+            loginButton.textContent = 'Login';
+            loginButton.href = 'login.html';
+            loginButton.onclick = null;
+        }
+        
+        // Ensure button is visible
+        loginButton.classList.add('ready');
     }
-    loginButton.classList.add('ready');
-  }
 }
-
 
 // Highlight current page in navigation
 function highlightCurrentPage() {
@@ -418,40 +424,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('loginForm');
-  if (form) { // only run this on login.html
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const u = document.getElementById('username').value.trim();
-      const p = document.getElementById('password').value.trim();
-
-      try {
-        const res = await fetch('data/users.json');
-        const users = await res.json();
-
-        const user = users.find(x => x.username === u && x.password === p);
-
-        if (!user) {
-          alert('Invalid username or password');
-          return;
-        }
-
-        // store info in session
-        sessionStorage.setItem('username', user.username);
-        sessionStorage.setItem('role', user.role);
-
-        // go to dashboard
-        window.location.href = 'dashboard.html';
-      } catch (err) {
-        console.error('Error loading users.json', err);
-        alert('Login system error — check console.');
-      }
-    });
-  }
-});
-
 
 // ===== CONSOLE MESSAGES FOR DEMO =====
 
@@ -464,5 +436,3 @@ console.log('---');
 console.log('✅ User registration now saves to localStorage!');
 console.log('New accounts will persist between page loads.');
 console.log('This is an IT student project showcasing local Cantilan cuisine!');
-
-
